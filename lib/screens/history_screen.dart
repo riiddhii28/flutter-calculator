@@ -6,6 +6,7 @@ import 'package:calculator/models/history_model.dart';
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
+  // Stream to fetch the user's history
   Stream<List<HistoryModel>> getUserHistory() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const Stream.empty();
@@ -18,6 +19,24 @@ class HistoryScreen extends StatelessWidget {
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => HistoryModel.fromMap(doc)).toList());
+  }
+
+  // Method to delete history item
+  Future<void> deleteHistoryItem(String historyId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('history')
+          .doc(historyId)
+          .delete();
+    } catch (e) {
+      // Handle the error, maybe show a snackbar or alert
+      print("Error deleting history: $e");
+    }
   }
 
   @override
@@ -53,6 +72,10 @@ class HistoryScreen extends StatelessWidget {
                 subtitle: Text(
                   '${item.timestamp.toLocal()}',
                   style: const TextStyle(fontSize: 12),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  onPressed: () => deleteHistoryItem(item.id), // Delete the history item
                 ),
               );
             },
